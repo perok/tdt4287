@@ -1,4 +1,3 @@
-import os, sys
 ENDCHAR = '#'
 
 class Node(object):
@@ -28,7 +27,7 @@ class Node(object):
         self.edges[char] = Edge(fr, to, node)
 
     def __repr__(self):
-        s =  "N({0}, {1})\n".format(self.isRoot, self.link is not None)
+        s =  "N({0}, {1}, {2})\n".format(self.id, self.isRoot, self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> {1}\n".format(key, value)
         return s
@@ -71,7 +70,7 @@ class SuffixTree(object):
 
         # How many new suffixes that need to be inserted. 
         # Set to one at the beginning of each step
-        remainder = 1 
+        remainder = 0
 
         ENDCHAR = len(self.string)
         print "ENDCHAR length", ENDCHAR, self.string
@@ -99,16 +98,16 @@ class SuffixTree(object):
 
             # Work through all remainders for each character
             while remainder > 0:
-                print "## Remainder", remainder
+                print "## Remainder", remainder, "active length", active['length']
                 # Make sure correct active edge is set
                 if active['length'] == 0: active['edge'] = self.string[step]
+                print "I IS ACTIVE EDGE=", active['edge']
 
-                # Char not found in current nodes outgoing edges 
                 # If current edge is not found current node
-                if c_char not in active['node'].edges:
-                    print "Inserting", c_char, "at step", step, "to", active['node']
+                if active['edge'] not in active['node'].edges:
+                    print "Inserting", active['edge'], "at step", step, "to", active['node']
                     # Insert the current char at current node
-                    active['node'].setEdge(c_char, step, ENDCHAR)
+                    active['node'].setEdge(active['edge'], step, ENDCHAR)
                     # rule 2
                     if nodeNeedSuffixLink is not None:
                         nodeNeedSuffixLink.link = active['node']
@@ -126,13 +125,13 @@ class SuffixTree(object):
                     # length of current edge (edge_length), we move our active
                     # point down until edge_length is not strictly greater than
                     # active_length.
-                    
-                    #while active['length'] >= edge[1] - edge[0]:
-                    #    active['node'] = node[
-                    
+
+                    if active['length'] >= len(edge):
+                        active['edge'] = self.string[len(edge) + 
+
                     # the char is next in the existing edge
                     print c_char, self.string[cNextPos],
-                    if c_char == self.string[cNextPos]: # observation 1
+                    if self.string[cNextPos] == c_char: # observation 1
                         print "was next"
                         # We set this edge to be the active edge 
                         active['length'] += 1
