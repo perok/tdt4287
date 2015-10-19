@@ -1,4 +1,4 @@
-
+import os
 ENDCHAR = '#'
 
 class Node(object):
@@ -24,6 +24,10 @@ class Node(object):
         node = Node(self)
         self.edges[char] = [fr, to, node]
 
+    # TODO make edge a class
+ #@property
+ #   def length(self):
+ #       return self.last_char_index - self.first_char_index
 
 class SuffixTree(object):
     """
@@ -85,17 +89,13 @@ class SuffixTree(object):
 
                 # There an outgoing edge from the current node
                 else:
-                    print activePoint[0], activePoint[1]
                     edge = activePoint[0].edges[activePoint[1]] # The active edge
                     cNextPos = edge[0] + activePoint[2] # edgeStart + active_length
 
-                    # observation 2
-                    if nodeNeedSuffixLink is not None:
-                        nodeNeedSuffixLink.link = activePoint[0]
-                    nodeNeedSuffixLink = activePoint[0]
+                    # TODO observation 2
 
                     # the char is next in the existing edge
-                    if cChar == self.string[cNextPos]: # TODO observation 1
+                    if cChar == self.string[cNextPos]: # observation 1
                         # We set this edge to be the active edge 
                         activePoint[2] += 1
                         # observation 3
@@ -137,6 +137,35 @@ class SuffixTree(object):
                     else:
                         activePoint[0] = self.root
 
+    def find_substring(self, substring):
+        """
+        Returns index of substring or -1 if not found.
+        """
+        if not substring:
+            return -1
+
+        c_node = self.root
+        i = 0
+        while i < len(substring):
+            # Find the edge
+            if substring[i] not in c_node.edges:
+                return -1
+            edge = c_node.edges[substring[i]]
+            print "edges", c_node.edges
+            print "edge", edge
+            edge_to = min(edge[1] - edge[0] + 1, len(substring) - 1)
+
+            if substring[i:edge_to] is not self.string[edge[0]:edge[0] + edge_to]:
+                return -1
+
+            i += edge[1] - edge[0] + 1
+            c_node = edge[2]
+        return edge[0] - len(substring) + edge_to
+
+
+
 
 if __name__ == "__main__":
     st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
+    st = SuffixTree("aaab")
+    print st.find_substring("a")
