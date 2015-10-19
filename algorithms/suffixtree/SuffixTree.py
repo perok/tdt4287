@@ -98,16 +98,13 @@ class SuffixTree(object):
 
             # Work through all remainders for each character
             while remainder > 0:
-                print "## Remainder", remainder, "active length", active['length']
                 # Make sure correct active edge is set
-                if active['length'] == 0: active['edge'] = self.string[step]
-                print "I IS ACTIVE EDGE=", active['edge']
+                if active['length'] == 0: active['edge'] = step
 
                 # If current edge is not found current node
-                if active['edge'] not in active['node'].edges:
-                    print "Inserting", active['edge'], "at step", step, "to", active['node']
+                if self.string[active['edge']] not in active['node'].edges:
                     # Insert the current char at current node
-                    active['node'].setEdge(active['edge'], step, ENDCHAR)
+                    active['node'].setEdge(self.string[active['edge']], step, ENDCHAR)
                     # rule 2
                     if nodeNeedSuffixLink is not None:
                         nodeNeedSuffixLink.link = active['node']
@@ -116,46 +113,38 @@ class SuffixTree(object):
                 # There an outgoing edge from the current node
                 else:
                     # The active edge
-                    edge = active['node'].edges[active['edge']]
+                    edge = active['node'].edges[self.string[active['edge']]]
                     # edgeStart + active_length
                     cNextPos = edge.start + active['length'] 
 
-                    # TODO observation 2
                     # If at some point active_length is greater or equal to the 
                     # length of current edge (edge_length), we move our active
                     # point down until edge_length is not strictly greater than
                     # active_length.
-
                     if active['length'] >= len(edge):
-                        active['edge'] = self.string[len(edge) + 
+                        active['edge'] += len(edge)
+                        active['length'] -= len(edge)
+                        active['node'] = edge.node
+                        continue
 
                     # the char is next in the existing edge
-                    print c_char, self.string[cNextPos],
                     if self.string[cNextPos] == c_char: # observation 1
-                        print "was next"
                         # We set this edge to be the active edge 
                         active['length'] += 1
                         # observation 3
                         if nodeNeedSuffixLink is not None:
-                            print "Node -> need suffix", nodeNeedSuffixLink
                             nodeNeedSuffixLink.link = active['node']
                         nodeNeedSuffixLink = active['node']
                         break # Time to go to next character
 
-                    print "was not next"
-                    print "Currently active: ", active['edge'], edge
                     # Since the char was not the next, we will split
                     # Overwrite old edge to new split edge 
-                    # TODO can this splitting be a cause of problems? Should the old node not be moved? Think about suffix links and how they are moved..
-                    print "Transforming", self.string[edge.start:edge.end], "to", self.string[edge.start:edge.start + active['length']]
 
                     edge.end = edge.start + active['length']
 
                     edge.node.setEdge(self.string[edge.end], edge.end, ENDCHAR)
                     # new leaf
                     edge.node.setEdge(c_char, step, ENDCHAR)
-
-                    print "the new nodes", edge.node
 
                     # rule 2
                     if nodeNeedSuffixLink is not None:
@@ -169,7 +158,7 @@ class SuffixTree(object):
                 #  Rule 1
                 if active['node'].isRoot and active['length'] > 0:
                     active['length'] -= 1
-                    active['edge'] = self.string[step - remainder + 1] 
+                    active['edge'] = step - remainder + 1
                 else:
                     #  Rule 3
                     if active['node'].link is not None:
