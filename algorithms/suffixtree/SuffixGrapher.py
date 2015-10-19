@@ -56,10 +56,10 @@ def _printEdges(node, treeString, step,  name="root"):
 def _printSLinks(node, name="root"):
         string = ""
         if node.link is not None:
-            string += "\tnode"+str(node.id)+" -> node"+str(node.link.id)+" [label=\"\",weight=1,style=dotted]"
-        else:
-            for char, edge in node.edges.iteritems():
-                string += _printSLinks(edge.node, char)
+            string += "\tnode"+str(node.id)+" -> node"+str(node.link.id)+" [label=\"\",weight=1,style=dotted]\n"
+
+        for char, edge in node.edges.iteritems():
+            string += _printSLinks(edge.node, char)
         return string
 
 

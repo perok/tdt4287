@@ -73,7 +73,6 @@ class SuffixTree(object):
         remainder = 0
 
         ENDCHAR = len(self.string)
-        print "ENDCHAR length", ENDCHAR, self.string
 
         print " ##### Suffix for", self.string
         # Iterate over all steps in input string.
@@ -81,11 +80,6 @@ class SuffixTree(object):
         # Step is position in string
         # todo this can be made to a addChar method? Step is obviously not needed
         for step in xrange(len(self.string)):
-            raw_input()
-
-            from SuffixGrapher import createGraphviz
-            createGraphviz(self.root, self.string, step=step)
-
             c_char = self.string[step] 
 
             # How many new suffixes that need to be inserted. 
@@ -93,8 +87,6 @@ class SuffixTree(object):
             remainder += 1 
 
             nodeNeedSuffixLink = None
-
-            print "### Starting step", step, "with", c_char
 
             # Work through all remainders for each character
             while remainder > 0:
@@ -106,7 +98,7 @@ class SuffixTree(object):
                     # Insert the current char at current node
                     active['node'].setEdge(self.string[active['edge']], step, ENDCHAR)
                     # rule 2
-                    if nodeNeedSuffixLink is not None:
+                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
                         nodeNeedSuffixLink.link = active['node']
                     nodeNeedSuffixLink = active['node']
 
@@ -132,7 +124,7 @@ class SuffixTree(object):
                         # We set this edge to be the active edge 
                         active['length'] += 1
                         # observation 3
-                        if nodeNeedSuffixLink is not None:
+                        if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
                             nodeNeedSuffixLink.link = active['node']
                         nodeNeedSuffixLink = active['node']
                         break # Time to go to next character
@@ -147,9 +139,8 @@ class SuffixTree(object):
                     edge.node.setEdge(c_char, step, ENDCHAR)
 
                     # rule 2
-                    if nodeNeedSuffixLink is not None:
+                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
                         nodeNeedSuffixLink.link = edge.node
-                    #nodeNeedSuffixLink = newEdge.node # the split node
                     nodeNeedSuffixLink = edge.node # the split node
 
                 # We have inserted one char
@@ -204,8 +195,7 @@ if __name__ == "__main__":
     #st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
     st = SuffixTree("abcabxabcd")
     #st = SuffixTree("abcada")
-    print "SEARCH FOR SUBSTRING"
     print st.find_substring("cab")
 
-    from SuffixGrapher import createGraphviz
-    createGraphviz(st.root, st.string)
+    #from SuffixGrapher import createGraphviz
+    #createGraphviz(st.root, st.string)
