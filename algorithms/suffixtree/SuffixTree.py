@@ -176,13 +176,13 @@ class SuffixTree(object):
             edge = c_node.edges[substring[i]]
             #print "Active edge", edge
 
-            edge_to = min(len(edge) + 1, len(substring))
+            edge_to = min(len(edge), len(substring) - i)
 
             #print substring[i:i+edge_to], self.string[edge.start:edge.start+edge_to]
             if substring[i:i+edge_to] != self.string[edge.start:edge.start+edge_to]:
                 return -1
 
-            i += len(edge) + 1
+            i += len(edge)
             c_node = edge.node
 
         #print "done"
@@ -194,8 +194,7 @@ class SuffixTree(object):
 if __name__ == "__main__":
     #st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
     st = SuffixTree("abcabxabcd")
-    #st = SuffixTree("abcada")
-    print st.find_substring("cab")
+    print st.find_substring("xab")
 
     #from SuffixGrapher import createGraphviz
     #createGraphviz(st.root, st.string)
