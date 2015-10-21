@@ -26,6 +26,8 @@ class Node(object):
         #self.edges[char] = [fr, to, node]
         self.edges[char] = Edge(fr, to, node)
 
+        return self.edges[char]
+
     def __repr__(self):
         s =  "N({0}, {1}, {2})\n".format(self.id, self.isRoot, self.link is not None)
         for key, value in self.edges.iteritems():
@@ -61,10 +63,10 @@ class SuffixTree(object):
 
     def _buildUkkonen(self):
 
-        # tuple (active_node, active_edge, active_length)
+        # (active_node, active_edge, active_length)
         active = {
-            'node': self.root,
-            'edge': '\00',
+            'node'  : self.root,
+            'edge'  : '\00',
             'length': 0
         }
 
@@ -104,10 +106,8 @@ class SuffixTree(object):
 
                 # There an outgoing edge from the current node
                 else:
-                    # The active edge
+                    # The active edge node
                     edge = active['node'].edges[self.string[active['edge']]]
-                    # edgeStart + active_length
-                    cNextPos = edge.start + active['length'] 
 
                     # If at some point active_length is greater or equal to the 
                     # length of current edge (edge_length), we move our active
@@ -120,7 +120,7 @@ class SuffixTree(object):
                         continue
 
                     # the char is next in the existing edge
-                    if self.string[cNextPos] == c_char: # observation 1
+                    if self.string[edge.start + active['length']] == c_char: # observation 1
                         # We set this edge to be the active edge 
                         active['length'] += 1
                         # observation 3
@@ -134,9 +134,19 @@ class SuffixTree(object):
 
                     edge.end = edge.start + active['length']
 
-                    edge.node.setEdge(self.string[edge.end], edge.end, ENDCHAR)
+                    tmp_edges = edge.node.edges
+                    tmp_link = edge.node.link
+                    edge.node.edges = {}
+                    edge.node.link = None
+
+                    new_edge = edge.node.setEdge(self.string[edge.end], edge.end, edge.end + active['length'])#ENDCHAR)
                     # new leaf
                     edge.node.setEdge(c_char, step, ENDCHAR)
+
+                    new_edge.node.edges = tmp_edges
+                    new_edge.node.link = tmp_link
+
+
 
                     # rule 2
                     if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
@@ -152,7 +162,7 @@ class SuffixTree(object):
                     active['edge'] = step - remainder + 1
                 else:
                     #  Rule 3
-                    if active['node'].link is not None:
+                    if active['node'].link is not None and not active['node'].link.isRoot:
                         active['node'] = active['node'].link
                     else:
                         active['node'] = self.root
@@ -192,9 +202,20 @@ class SuffixTree(object):
 
 
 if __name__ == "__main__":
-    #st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
+    st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
+    print st.find_substring("CTCC")
+
+    from SuffixGrapher import createGraphviz
+    createGraphviz(st.root, st.string)
+
     st = SuffixTree("abcabxabcd")
     print st.find_substring("xab")
 
-    #from SuffixGrapher import createGraphviz
-    #createGraphviz(st.root, st.string)
+    from SuffixGrapher import createGraphviz
+    createGraphviz(st.root, st.string)
+
+    st = SuffixTree("cdddcdc")
+    print st.find_substring("xab")
+
+    from SuffixGrapher import createGraphviz
+    createGraphviz(st.root, st.string)
