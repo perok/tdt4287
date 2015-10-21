@@ -1,4 +1,3 @@
-ENDCHAR = '#'
 
 class Node(object):
     """
@@ -23,7 +22,6 @@ class Node(object):
         char -> (from, to, node)
         """
         node = Node()
-        #self.edges[char] = [fr, to, node]
         self.edges[char] = Edge(fr, to, node)
 
         return self.edges[char]
@@ -76,7 +74,6 @@ class SuffixTree(object):
 
         ENDCHAR = len(self.string)
 
-        print " ##### Suffix for", self.string
         # Iterate over all steps in input string.
         # From pos 0 to pos len(string) - 1
         # Step is position in string
@@ -130,28 +127,26 @@ class SuffixTree(object):
                         break # Time to go to next character
 
                     # Since the char was not the next, we will split
-                    # Overwrite old edge to new split edge 
 
-                    edge.end = edge.start + active['length']
+                    # Overwrite old edge with new split
+                    splitEdge = active['node'].setEdge(
+                            self.string[active['edge']], 
+                            edge.start, 
+                            edge.start + active['length'])
 
-                    tmp_edges = edge.node.edges
-                    tmp_link = edge.node.link
-                    edge.node.edges = {}
-                    edge.node.link = None
+                    # Insert the new char
+                    splitEdge.node.setEdge(c_char, step, ENDCHAR)
 
-                    new_edge = edge.node.setEdge(self.string[edge.end], edge.end, edge.end + active['length'])#ENDCHAR)
-                    # new leaf
-                    edge.node.setEdge(c_char, step, ENDCHAR)
+                    # Old edge start a bit further now
+                    edge.start += active['length']
 
-                    new_edge.node.edges = tmp_edges
-                    new_edge.node.link = tmp_link
-
-
+                    # Insert the old edge to the new split edge
+                    splitEdge.node.edges[self.string[edge.start]] = edge
 
                     # rule 2
                     if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
-                        nodeNeedSuffixLink.link = edge.node
-                    nodeNeedSuffixLink = edge.node # the split node
+                        nodeNeedSuffixLink.link = splitEdge.node
+                    nodeNeedSuffixLink = splitEdge.node
 
                 # We have inserted one char
                 remainder -= 1
@@ -177,28 +172,19 @@ class SuffixTree(object):
         c_node = self.root
         i = 0
         while i < len(substring):
-            #print "c_node", c_node
-            # Find the edge
-            #print i, substring[i]
-            #print "the edges", c_node.edges
             if substring[i] not in c_node.edges:
                 return -1
             edge = c_node.edges[substring[i]]
-            #print "Active edge", edge
 
             edge_to = min(len(edge), len(substring) - i)
 
-            #print substring[i:i+edge_to], self.string[edge.start:edge.start+edge_to]
             if substring[i:i+edge_to] != self.string[edge.start:edge.start+edge_to]:
                 return -1
 
             i += len(edge)
             c_node = edge.node
 
-        #print "done"
         return edge.start - len(substring) + edge_to
-
-
 
 
 if __name__ == "__main__":
@@ -208,14 +194,3 @@ if __name__ == "__main__":
     from SuffixGrapher import createGraphviz
     createGraphviz(st.root, st.string)
 
-    st = SuffixTree("abcabxabcd")
-    print st.find_substring("xab")
-
-    from SuffixGrapher import createGraphviz
-    createGraphviz(st.root, st.string)
-
-    st = SuffixTree("cdddcdc")
-    print st.find_substring("xab")
-
-    from SuffixGrapher import createGraphviz
-    createGraphviz(st.root, st.string)
