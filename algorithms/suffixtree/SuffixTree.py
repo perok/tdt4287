@@ -5,81 +5,94 @@ class Node(object):
 
     Children dict has edges ((pos, ENDCHAR), Node(self)).
 
-    No parent means that it is the root node.
+    If start, end, or string_id is None, then the node is root
+
     """
     counter = 0
-    def __init__(self, isRoot=False):
-        self.isRoot = isRoot 
-        self.edges = {}
-        self.link = None
+    def __init__(self, string_id=None, start=None, end=None):
         self.id = Node.counter
         Node.counter += 1
 
-    def setEdge(self, char, fr, to):
-        """ 
-        Add one edge to node.
-        Edge is representent with tuple (start, end, ->Node)
-        char -> (from, to, node)
+        self.start = start
+        self.end = end
+        self.string_id = string_id
+        self.edges = {}
+        self.link = None
+
+    def setEdge(self, char, string_id, start, end):
         """
-        node = Node()
-        self.edges[char] = Edge(fr, to, node)
+        Add one pointing to a new node that is [start, end) on string string_id.
+        char -> Node
+        Returns the new node.
+        """
+        self.edges[char] = Node(string_id, start, end)
 
         return self.edges[char]
 
-    def __repr__(self):
-        s =  "N({0}, {1}, {2})\n".format(self.id, self.isRoot, self.link is not None)
-        for key, value in self.edges.iteritems():
-            s += "\t{0} -> {1}\n".format(key, value)
-        return s
-
-
-class Edge(object):
-    def __init__(self, start, end, node):
-        self.start = start
-        self.end = end
-        self.node = node
+    def is_root(self):
+        return self.start is None
 
     def __len__(self):
+        """
+        Get the lenght the substring for the edge to the node
+        """
         return self.end - self.start 
 
     def __repr__(self):
-        return "E({0} -> {1})".format(self.start, self.end)
+        s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
+        for key, value in self.edges.iteritems():
+            s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
+                    key, 
+                    value.string_id, 
+                    value.start, 
+                    value.end)
+        return s
 
 class SuffixTree(object):
     """
-    Suffix tree algorithm.
-    Builds tree with Ukkonens algorithm.
+    Generalized Suffix Tree
     """
 
-    def __init__(self, string):
+    def __init__(self):
+        self.active_string = -1
+        self.strings = {}
+        self.root = Node()
 
-        self.string = string
+    def get_char(self, pos):
+        """
+        Gets the a char at pos from active string
+        """
+        return self.strings[self.active_string][pos]
 
-        self.root = Node(isRoot=True)
+    def get_string(self):
+        """
+        Return the current active string
+        """
+        return self.strings[self.active_string]
 
-        self._buildUkkonen()
+    def add_string(self, string):
+        """
+        Build suffix tree with Ukkonen's algoritm.
+        """
+        self.active_string += 1
+        self.strings[self.active_string] = string
 
-    def _buildUkkonen(self):
-
-        # (active_node, active_edge, active_length)
-        active = {
-            'node'  : self.root,
-            'edge'  : '\00',
-            'length': 0
-        }
+        # Triplet for the active state
+        active_node   = self.root
+        active_edge   = '\00'
+        active_length = 0
 
         # How many new suffixes that need to be inserted. 
-        # Set to one at the beginning of each step
         remainder = 0
 
-        ENDCHAR = len(self.string)
+        ENDCHAR = len(self.get_string())
 
         # Iterate over all steps in input string.
         # From pos 0 to pos len(string) - 1
         # Step is position in string
         # todo this can be made to a addChar method? Step is obviously not needed
-        for step in xrange(len(self.string)):
-            c_char = self.string[step] 
+        for step in xrange(len(self.get_string())):
+            c_char = self.get_char(step)
 
             # How many new suffixes that need to be inserted. 
             # Set to one at the beginning of each step
@@ -90,77 +103,93 @@ class SuffixTree(object):
             # Work through all remainders for each character
             while remainder > 0:
                 # Make sure correct active edge is set
-                if active['length'] == 0: active['edge'] = step
+                if active_length == 0: active_edge = step
 
                 # If current edge is not found current node
-                if self.string[active['edge']] not in active['node'].edges:
+                if self.get_char(active_edge) not in active_node.edges:
                     # Insert the current char at current node
-                    active['node'].setEdge(self.string[active['edge']], step, ENDCHAR)
+                    active_node.setEdge(
+                            self.get_char(active_edge),
+                            self.active_string,
+                            step,
+                            ENDCHAR)
+
                     # rule 2
-                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
-                        nodeNeedSuffixLink.link = active['node']
-                    nodeNeedSuffixLink = active['node']
+                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
+                        nodeNeedSuffixLink.link = active_node
+                    nodeNeedSuffixLink = active_node
 
                 # There an outgoing edge from the current node
                 else:
-                    # The active edge node
-                    edge = active['node'].edges[self.string[active['edge']]]
+                    # The active node
+                    edge = active_node.edges[self.get_char(active_edge)]
 
                     # If at some point active_length is greater or equal to the 
                     # length of current edge (edge_length), we move our active
                     # point down until edge_length is not strictly greater than
                     # active_length.
-                    if active['length'] >= len(edge):
-                        active['edge'] += len(edge)
-                        active['length'] -= len(edge)
-                        active['node'] = edge.node
+                    if active_length >= len(edge):
+                        active_edge += len(edge)
+                        active_length -= len(edge)
+                        active_node = edge
                         continue
 
                     # the char is next in the existing edge
-                    if self.string[edge.start + active['length']] == c_char: # observation 1
+                    if self.get_char(edge.start + active_length) == c_char: # observation 1
                         # We set this edge to be the active edge 
-                        active['length'] += 1
+                        active_length += 1
                         # observation 3
-                        if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
-                            nodeNeedSuffixLink.link = active['node']
-                        nodeNeedSuffixLink = active['node']
+                        if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
+                            nodeNeedSuffixLink.link = active_node
+                        nodeNeedSuffixLink = active_node
                         break # Time to go to next character
 
                     # Since the char was not the next, we will split
 
                     # Overwrite old edge with new split
-                    splitEdge = active['node'].setEdge(
-                            self.string[active['edge']], 
+                    splitEdge = active_node.setEdge(
+                            self.get_char(active_edge),
+                            self.active_string,
                             edge.start, 
-                            edge.start + active['length'])
+                            edge.start + active_length)
 
                     # Insert the new char
-                    splitEdge.node.setEdge(c_char, step, ENDCHAR)
+                    splitEdge.setEdge(
+                            c_char,
+                            self.active_string,
+                            step,
+                            ENDCHAR)
 
                     # Old edge start a bit further now
-                    edge.start += active['length']
+                    edge.start += active_length
 
                     # Insert the old edge to the new split edge
-                    splitEdge.node.edges[self.string[edge.start]] = edge
+                    splitEdge.edges[self.get_char(edge.start)] = edge
 
                     # rule 2
-                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.isRoot:
-                        nodeNeedSuffixLink.link = splitEdge.node
-                    nodeNeedSuffixLink = splitEdge.node
+                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
+                        nodeNeedSuffixLink.link = splitEdge
+                    nodeNeedSuffixLink = splitEdge
 
                 # We have inserted one char
                 remainder -= 1
 
                 #  Rule 1
-                if active['node'].isRoot and active['length'] > 0:
-                    active['length'] -= 1
-                    active['edge'] = step - remainder + 1
+                if active_node.is_root() and active_length > 0:
+                    active_length -= 1
+                    active_edge = step - remainder + 1
                 else:
                     #  Rule 3
-                    if active['node'].link is not None and not active['node'].link.isRoot:
-                        active['node'] = active['node'].link
+                    if active_node.link is not None and not active_node.link.is_root():
+                        active_node = active_node.link
                     else:
-                        active['node'] = self.root
+                        active_node = self.root
+
+    def get_internal_subtring(self, node, start, end):
+        """
+        Gets the internal substring from a node in a given range.
+        """
+        return self.strings[node.string_id][start:end]
 
     def find_substring(self, substring):
         """
@@ -178,19 +207,35 @@ class SuffixTree(object):
 
             edge_to = min(len(edge), len(substring) - i)
 
-            if substring[i:i+edge_to] != self.string[edge.start:edge.start+edge_to]:
+            if substring[i:i+edge_to] != self.get_internal_subtring(edge, edge.start, edge.start+edge_to):
                 return -1
 
             i += len(edge)
-            c_node = edge.node
+            c_node = edge
 
         return edge.start - len(substring) + edge_to
 
 
-if __name__ == "__main__":
-    st = SuffixTree("TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
-    print st.find_substring("CTCC")
+def cmd_line_main():
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Suffix Tree creator",
+        epilog="Tips:\nabcabxabcd\ncdddcdc\nTGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
 
-    from SuffixGrapher import createGraphviz
-    createGraphviz(st.root, st.string)
+    parser.add_argument("string", help="Make Suffix tree on this string")
+    parser.add_argument("search", help="Keyword to search for")
+    parser.add_argument("--gprint", help="Print graphviz file", action="store_true")
+    args = parser.parse_args()
+
+    st = SuffixTree()
+    st.add_string(args.string)
+    print st.find_substring(args.search)
+
+    if args.gprint:
+        from SuffixGrapher import Grapher
+        g = Grapher(st)
+        g.createGraphviz()
+
+if __name__ == "__main__":
+    cmd_line_main()
 
