@@ -39,7 +39,7 @@ class Node(object):
         return self.end - self.start 
 
     def __repr__(self):
-        s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root, self.link is not None)
+        s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
                     key, 
@@ -175,12 +175,12 @@ class SuffixTree(object):
                 remainder -= 1
 
                 #  Rule 1
-                if active_node.is_root and active_length > 0:
+                if active_node.is_root() and active_length > 0:
                     active_length -= 1
                     active_edge = step - remainder + 1
                 else:
                     #  Rule 3
-                    if active_node.link is not None and not active_node.link.is_root:
+                    if active_node.link is not None and not active_node.link.is_root():
                         active_node = active_node.link
                     else:
                         active_node = self.root
