@@ -36,15 +36,15 @@ class Node(object):
         """
         Get the lenght the substring for the edge to the node
         """
-        return self.end - self.start 
+        return self.end - self.start
 
     def __repr__(self):
         s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
-                    key, 
-                    value.string_id, 
-                    value.start, 
+                    key,
+                    value.string_id,
+                    value.start,
                     value.end)
         return s
 
@@ -82,7 +82,7 @@ class SuffixTree(object):
         active_edge   = '\00'
         active_length = 0
 
-        # How many new suffixes that need to be inserted. 
+        # How many new suffixes that need to be inserted.
         remainder = 0
 
         ENDCHAR = len(self.get_string())
@@ -94,9 +94,9 @@ class SuffixTree(object):
         for step in xrange(len(self.get_string())):
             c_char = self.get_char(step)
 
-            # How many new suffixes that need to be inserted. 
+            # How many new suffixes that need to be inserted.
             # Set to one at the beginning of each step
-            remainder += 1 
+            remainder += 1
 
             nodeNeedSuffixLink = None
 
@@ -124,7 +124,7 @@ class SuffixTree(object):
                     # The active node
                     edge = active_node.edges[self.get_char(active_edge)]
 
-                    # If at some point active_length is greater or equal to the 
+                    # If at some point active_length is greater or equal to the
                     # length of current edge (edge_length), we move our active
                     # point down until edge_length is not strictly greater than
                     # active_length.
@@ -136,7 +136,7 @@ class SuffixTree(object):
 
                     # the char is next in the existing edge
                     if self.get_char(edge.start + active_length) == c_char: # observation 1
-                        # We set this edge to be the active edge 
+                        # We set this edge to be the active edge
                         active_length += 1
                         # observation 3
                         if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
@@ -150,7 +150,7 @@ class SuffixTree(object):
                     splitEdge = active_node.setEdge(
                             self.get_char(active_edge),
                             self.active_string,
-                            edge.start, 
+                            edge.start,
                             edge.start + active_length)
 
                     # Insert the new char
@@ -204,7 +204,6 @@ class SuffixTree(object):
             if substring[i] not in c_node.edges:
                 return -1
             edge = c_node.edges[substring[i]]
-
             edge_to = min(len(edge), len(substring) - i)
 
             if substring[i:i+edge_to] != self.get_internal_subtring(edge, edge.start, edge.start+edge_to):
@@ -214,6 +213,19 @@ class SuffixTree(object):
             c_node = edge
 
         return edge.start - len(substring) + edge_to
+
+    def find_prefix_match(self, string, error_limit):
+        """
+        matches the prefix of the string with the suffixTree
+        """
+        largest_substring = None
+        for i in range(len(string)-1):
+            substring_to_check = string[:i]
+            if self.find_substring(substring_to_check) >= 0:
+                largest_substring = substring_to_check
+        return largest_substring
+
+
 
 
 def cmd_line_main():
@@ -238,4 +250,3 @@ def cmd_line_main():
 
 if __name__ == "__main__":
     cmd_line_main()
-
