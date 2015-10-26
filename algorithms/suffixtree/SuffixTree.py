@@ -36,15 +36,25 @@ class Node(object):
         """
         Get the lenght the substring for the edge to the node
         """
+<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
         return self.end - self.start
+=======
+        return self.end - self.start
+>>>>>>> prefix-suffix match works
 
     def __repr__(self):
         s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
+<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
                     key,
                     value.string_id,
                     value.start,
+=======
+                    key,
+                    value.string_id,
+                    value.start,
+>>>>>>> prefix-suffix match works
                     value.end)
         return s
 
@@ -82,7 +92,11 @@ class SuffixTree(object):
         active_edge   = '\00'
         active_length = 0
 
+<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
         # How many new suffixes that need to be inserted.
+=======
+        # How many new suffixes that need to be inserted.
+>>>>>>> prefix-suffix match works
         remainder = 0
 
         ENDCHAR = len(self.get_string())
@@ -136,7 +150,11 @@ class SuffixTree(object):
 
                     # the char is next in the existing edge
                     if self.get_char(edge.start + active_length) == c_char: # observation 1
+<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
                         # We set this edge to be the active edge
+=======
+                        # We set this edge to be the active edge
+>>>>>>> prefix-suffix match works
                         active_length += 1
                         # observation 3
                         if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
@@ -150,7 +168,11 @@ class SuffixTree(object):
                     splitEdge = active_node.setEdge(
                             self.get_char(active_edge),
                             self.active_string,
+<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
                             edge.start,
+=======
+                            edge.start,
+>>>>>>> prefix-suffix match works
                             edge.start + active_length)
 
                     # Insert the new char
@@ -216,15 +238,36 @@ class SuffixTree(object):
 
     def find_prefix_match(self, string, error_limit):
         """
-        matches the prefix of the string with the suffixTree
+        Matches the prefix of the string with the suffixTree
         """
-        largest_substring = None
-        for i in range(len(string)-1):
-            substring_to_check = string[:i]
-            if self.find_substring(substring_to_check) >= 0:
-                largest_substring = substring_to_check
-        return largest_substring
+        largest_prefix_match = None
+        string_prefix = string
+        string_index = 0
+        suffix = False
+        current = self.root
+        while string_index < len(string_prefix):
+            if string_prefix[string_index] in current.edges:
+                current = current.edges[string_prefix[string_index]]
+                branch = self.get_internal_subtring(current, current.start, current.end)
+                string_end = string_index+len(branch)
+                if current.link is None:
+                    suffix = True
+                if len(string_prefix[string_index:string_end]) == len(branch) and self.hamming_distance(string_prefix[string_index:string_end], branch) <= error_limit:
+                    string_index += len(branch)
+                    if suffix:
+                        largest_prefix_match = string_prefix[:string_end]
 
+            else:
+                break
+        return largest_prefix_match
+
+    def hamming_distance(self, s1, s2):
+        """
+        Return the Hamming distance between equal-length sequences
+        """
+        if len(s1) != len(s2):
+            raise ValueError("Undefined for sequences of unequal length")
+        return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
 
 
@@ -242,6 +285,9 @@ def cmd_line_main():
     st = SuffixTree()
     st.add_string(args.string)
     print st.find_substring(args.search)
+
+    print st.find_prefix_match(args.search, 0)
+
 
     if args.gprint:
         from SuffixGrapher import Grapher
