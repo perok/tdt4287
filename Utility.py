@@ -28,7 +28,7 @@ def create_gst_on_file(filename, gprint=False):
     with open(filename) as text_file:
         i = -1
         for line in text_file:
-            st.add_string(line.strip())#.strip())
+            st.add_string(line)#.strip())#.strip())
             i += 1
 
             if i % 100000 == 0:
