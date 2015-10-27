@@ -1,5 +1,6 @@
 from itertools import izip_longest
 
+alphabet = 'ACTG$'
 
 class Node(object):
     """
@@ -10,7 +11,11 @@ class Node(object):
     If start, end, or string_id is None, then the node is root
 
     """
+    # Avoid using dict on class properties
+    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']
+
     counter = 0
+
     def __init__(self, string_id=None, start=None, end=None):
         self.id = Node.counter
         Node.counter += 1
@@ -18,10 +23,10 @@ class Node(object):
         self.start = start
         self.end = end
         self.string_id = string_id
-        self.edges = {}
+        self.edges = {} # recordclass with alphabet?
         self.link = None
 
-        self.suffixes = []
+        self.suffixes = 0
 
     def setEdge(self, char, string_id, start, end):
         """
@@ -32,6 +37,10 @@ class Node(object):
         self.edges[char] = Node(string_id, start, end)
 
         return self.edges[char]
+
+    def addSuffix(self, string_id, char):
+        self.suffixes += 1
+        # append((string_id, char))
 
     def is_root(self):
         return self.start is None
@@ -128,13 +137,15 @@ class SuffixTree(object):
         """
         self.active_string += 1
         self.strings.append(string + '$')
-        #self.strings[self.active_string] = string + '$'
 
         start = 0
 
 
-        ENDCHAR = len(self.get_string()) #- 1
-
+        ENDCHAR = len(self.get_string())# - 1
+        #print ENDCHAR
+        #for i in xrange(len(self.get_string())):
+        #    print i, self.get_char(i),
+        #print '\n'
         #if self.active_string > 0 and False:
         #    start = self._find_first_mistmatch(self.get_string())
         #    if self.verbose: print "\tNew string starting on pos:", start,"which is char:", self.get_char(start)
@@ -149,6 +160,8 @@ class SuffixTree(object):
         active_node = self.root
         active_edge = '\00'
         active_length = 0
+
+        self.remainder = 0
 
         # Iterate over all steps in input string.
         # From pos 0 to pos len(string) - 1
@@ -169,9 +182,18 @@ class SuffixTree(object):
                 # Make sure correct active edge is set
                 if self.active_length == 0: self.active_edge = step
 
-                if self.verbose: print "\tNew while. self.remainder is", self.remainder, "active node is", self.active_node
+                if self.verbose: print "\tStep {0}: New while. self.remainder is {1} active node is {2}".format(step, self.remainder,self.active_node)
 
                 # If current edge is not found current node
+                try:
+                    balle = self.get_char(self.active_edge)
+                except IndexError:
+                    print "IndexError aka fml"
+                    print self.active_string
+                    print self.active_edge
+                    print self.get_string(), len(self.get_string())
+                    print self
+
                 if self.get_char(self.active_edge) not in self.active_node.edges:
                     if self.verbose: print "\tActive edge", self.get_char(self.active_edge), "not in active node"
                     # Insert the current char at current node
@@ -180,13 +202,15 @@ class SuffixTree(object):
                             self.active_string,
                             step,
                             ENDCHAR)
-                    newLeaf.suffixes.append((self.active_string, step - self.remainder - 1))
+                    newLeaf.addSuffix(self.active_string, step - self.remainder - 1)
 
                     # rule 2
                     self.set_suffix_link(self.active_node)
+
                 # There an outgoing edge from the current node
                 else:
                     # Jump forward
+                    # TODO wierd bug, must be removed if string is stripped.
                     if self.active_node.is_root():
                         self.active_edge = step - self.remainder + 1 # testing
                         self.active_length = self.remainder - 1 # testing
@@ -204,7 +228,7 @@ class SuffixTree(object):
 
                         if c_char == '$':
                             # We ended on a suffix
-                            edge.suffixes.append((self.active_string, step - self.remainder - 1))
+                            edge.addSuffix(self.active_string, step - self.remainder - 1)
                         else:
                             # We set this edge to be the active edge
                             self.active_length += 1
@@ -228,7 +252,7 @@ class SuffixTree(object):
                                 self.active_string,
                                 step,
                                 ENDCHAR)
-                        newLeaf.suffixes.append((self.active_string, step - self.remainder - 1))
+                        newLeaf.addSuffix(self.active_string, step - self.remainder - 1)
 
                         # Old edge start a bit further now
                         edge.start += self.active_length
