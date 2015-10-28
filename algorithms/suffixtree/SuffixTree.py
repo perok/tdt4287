@@ -36,15 +36,15 @@ class Node(object):
         """
         Get the lenght the substring for the edge to the node
         """
-        return self.end - self.start 
+        return self.end - self.start
 
     def __repr__(self):
         s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
-                    key, 
-                    value.string_id, 
-                    value.start, 
+                    key,
+                    value.string_id,
+                    value.start,
                     value.end)
         return s
 
@@ -82,7 +82,8 @@ class SuffixTree(object):
         active_edge   = '\00'
         active_length = 0
 
-        # How many new suffixes that need to be inserted. 
+        # How many new suffixes that need to be inserted.
+
         remainder = 0
 
         ENDCHAR = len(self.get_string())
@@ -94,9 +95,9 @@ class SuffixTree(object):
         for step in xrange(len(self.get_string())):
             c_char = self.get_char(step)
 
-            # How many new suffixes that need to be inserted. 
+            # How many new suffixes that need to be inserted.
             # Set to one at the beginning of each step
-            remainder += 1 
+            remainder += 1
 
             nodeNeedSuffixLink = None
 
@@ -124,7 +125,7 @@ class SuffixTree(object):
                     # The active node
                     edge = active_node.edges[self.get_char(active_edge)]
 
-                    # If at some point active_length is greater or equal to the 
+                    # If at some point active_length is greater or equal to the
                     # length of current edge (edge_length), we move our active
                     # point down until edge_length is not strictly greater than
                     # active_length.
@@ -136,7 +137,6 @@ class SuffixTree(object):
 
                     # the char is next in the existing edge
                     if self.get_char(edge.start + active_length) == c_char: # observation 1
-                        # We set this edge to be the active edge 
                         active_length += 1
                         # observation 3
                         if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
@@ -150,7 +150,7 @@ class SuffixTree(object):
                     splitEdge = active_node.setEdge(
                             self.get_char(active_edge),
                             self.active_string,
-                            edge.start, 
+                            edge.start,
                             edge.start + active_length)
 
                     # Insert the new char
@@ -204,7 +204,6 @@ class SuffixTree(object):
             if substring[i] not in c_node.edges:
                 return -1
             edge = c_node.edges[substring[i]]
-
             edge_to = min(len(edge), len(substring) - i)
 
             if substring[i:i+edge_to] != self.get_internal_subtring(edge, edge.start, edge.start+edge_to):
@@ -214,6 +213,46 @@ class SuffixTree(object):
             c_node = edge
 
         return edge.start - len(substring) + edge_to
+
+    def hamming_distance(self, s1, s2):
+        """
+        Return the Hamming distance between equal-length sequences
+        """
+        if len(s1) != len(s2):
+            raise ValueError("Undefined for sequences of unequal length")
+        return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
+
+    def find_prefixmatch(self, current_substring, node, error_limit, current_match = "", longest_match = ""):
+        string = current_substring
+        for edge in node.edges:
+            child_node = node.edges[edge]
+            edge_substring = self.get_internal_subtring(child_node, child_node.start, child_node.end)
+            #Logic if leaf node
+            if edge_substring[-1] == "$":
+                without_endchar = edge_substring[:-1]
+                string_substring = string[:len(without_endchar)]
+                if len(without_endchar) == len(string_substring):
+                    substring_error = self.hamming_distance(string_substring, without_endchar)
+                    match = current_match+string_substring
+                    if substring_error <= error_limit and len(match) > len(longest_match):
+                        longest_match = match
+
+            #Logic if an internal node
+            else:
+                string_substring = string[:len(edge_substring)]
+                substring_error = self.hamming_distance(string_substring, edge_substring)
+
+                if substring_error > error_limit:
+                    continue
+                else:
+                    new_error_limit = error_limit-substring_error
+                    new_current_match = current_match + string_substring
+                    new_current_substring = string[len(edge_substring):]
+                    match = self.find_prefixmatch(new_current_substring, child_node, new_error_limit, new_current_match, longest_match)
+                    if len(match) > len(longest_match):
+                        longest_match = match
+
+        return longest_match
 
 
 def cmd_line_main():
@@ -229,6 +268,7 @@ def cmd_line_main():
 
     st = SuffixTree()
     st.add_string(args.string)
+
     print st.find_substring(args.search)
 
     if args.gprint:
@@ -238,4 +278,3 @@ def cmd_line_main():
 
 if __name__ == "__main__":
     cmd_line_main()
-
