@@ -318,23 +318,10 @@ def cmd_line_main():
     parser.add_argument("--gprint", help="Print graphviz file", action="store_true")
     args = parser.parse_args()
 
-
     st = SuffixTree()
     st.add_string(args.string)
-    print st.find_substring(args.search)
-    print st.find_prefix_match(args.search, 0)
-    
-    adaptersequence = "$TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
-    reversed_adaptersequence = adaptersequence[::-1]
-    st.add_string(reversed_adaptersequence)
-    f = open("s_3_sequence_1M.txt", "r")
-    for line in f:
-        line = line.strip()
-        reversed_line = line[::-1]
-        matchmatch = st.find_prefixmatch(reversed_line, st.root, 0)
-        if len(matchmatch) > 1:
-            print "Longest match found: " + matchmatch[::-1]
 
+    print st.find_substring(args.search)
 
     if args.gprint:
         from SuffixGrapher import Grapher
