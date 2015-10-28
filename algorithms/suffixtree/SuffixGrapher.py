@@ -4,7 +4,7 @@ class Grapher(object):
     def __init__(self, gst):
         self.gst = gst
 
-    def createGraphviz(self, step=0):
+    def createGraphviz(self, step=""):
 
         string = "digraph {\n"
         string +="\trankdir = LR;\n"
@@ -29,7 +29,7 @@ class Grapher(object):
     def _printLeaves(self, node, name="root"):
         string = ""
         if len(node.edges) is 0:
-            string += "\tnode" + str(node.id) + " [label=\"\",shape=point]\n"
+            string += "\tnode" + str(node.id) + " [label=\""+str(node.id)+"\",shape=circle]\n" #shape=point
         else:
             for char, edge in node.edges.iteritems():
                 string += self._printLeaves(edge, char)
@@ -38,7 +38,7 @@ class Grapher(object):
     def _printInternalNodes(self, node, name="root"):
         string = ""
         if not node.is_root() and len(node.edges) > 0:
-            string += "\tnode" + str(node.id) + "[label=\"\",style=filled,fillcolor=lightgrey,shape=circle,width=.07,height=.07]\n"
+            string += "\tnode" + str(node.id) + "[label=\""+str(node.id)+"\",style=filled,fillcolor=lightgrey,shape=circle,width=.07,height=.07]\n"
 
         for char, edge in node.edges.iteritems():
             string += self._printInternalNodes(edge, char)
@@ -49,7 +49,7 @@ class Grapher(object):
         for char, edge in node.edges.iteritems():
             # todo, accessing correct?
             internalString = self.gst.get_internal_subtring(edge, edge.start, edge.end)#min(edge.end, len(treeString)))
-            edgeString = "{0} [{1}, {2}]".format(internalString, edge.start, edge.end)
+            edgeString = "{0} ({1})[{2}, {3}]".format(internalString, edge.string_id, edge.start, edge.end)
 
             #print edgeString, char, edge.start, edge.start + len(edge)
             #edgeString = string[edge.start: len(string) if edge[1] is ENDCHAR else edge[1]]

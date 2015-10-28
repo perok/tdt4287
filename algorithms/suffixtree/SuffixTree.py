@@ -1,3 +1,6 @@
+from itertools import izip_longest
+
+alphabet = 'ACTG$'
 
 class Node(object):
     """
@@ -8,7 +11,11 @@ class Node(object):
     If start, end, or string_id is None, then the node is root
 
     """
+    # Avoid using dict on class properties
+    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']
+
     counter = 0
+
     def __init__(self, string_id=None, start=None, end=None):
         self.id = Node.counter
         Node.counter += 1
@@ -16,8 +23,10 @@ class Node(object):
         self.start = start
         self.end = end
         self.string_id = string_id
-        self.edges = {}
+        self.edges = {} # recordclass with alphabet?
         self.link = None
+
+        self.suffixes = 0
 
     def setEdge(self, char, string_id, start, end):
         """
@@ -29,6 +38,10 @@ class Node(object):
 
         return self.edges[char]
 
+    def addSuffix(self, string_id, char):
+        self.suffixes += 1
+        # append((string_id, char))
+
     def is_root(self):
         return self.start is None
 
@@ -39,9 +52,9 @@ class Node(object):
         return self.end - self.start
 
     def __repr__(self):
-        s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
+        s =  "N({0}, {1}, {2})".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
-            s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
+            s += "\n\t{0} -> Node(id={1}, start={2}, end={3})".format(
                     key,
                     value.string_id,
                     value.start,
@@ -53,10 +66,33 @@ class SuffixTree(object):
     Generalized Suffix Tree
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         self.active_string = -1
-        self.strings = {}
+        self.strings = []
         self.root = Node()
+
+        # Triplet for the active state
+        self.active_node   = self.root
+        self.active_edge   = '\00'
+        self.active_length = 0
+
+        # How many new suffixes that need to be inserted.
+        self.remainder = 0
+
+        self.nodeNeedSuffixLink = None
+
+        self.verbose = verbose
+
+    def __repr__(self):
+        s =  "#" * 5 + " Generalized Suffix Tree state " + "#" * 5
+        s+= "\n\tActive node " + str(self.active_node)
+        s+= "\n\tActive edge " + str(self.active_edge)
+        s+= "\n\tActive length " + str(self.active_length)
+        s+= "\n\tRemainder " + str(self.remainder)
+        s+= "\n\tNode need suffix link: " + str(self.nodeNeedSuffixLink.id) if self.nodeNeedSuffixLink is not None else "False"
+        s+=  "\n" + "#" * 41
+
+        return s
 
     def get_char(self, pos):
         """
@@ -64,132 +100,229 @@ class SuffixTree(object):
         """
         return self.strings[self.active_string][pos]
 
+    def get_char_from_string(self, stringId, pos):
+        """
+        Gets the a char at pos from given string
+        """
+        return self.strings[stringId][pos]
+
     def get_string(self):
         """
         Return the current active string
         """
         return self.strings[self.active_string]
 
+    def walk_down(self, edge):
+        """
+        If at some point self.active_length is greater or equal to the
+        length of current edge (edge_length), we move our active
+        point down until edge_length is not strictly greater than
+        self.active_length.
+        """
+        if self.active_length >= len(edge):
+            self.active_edge += len(edge)
+            self.active_length -= len(edge)
+            self.active_node = edge
+            return True
+        return False
+
+    def set_suffix_link(self, node):
+        if self.nodeNeedSuffixLink is not None:
+            self.nodeNeedSuffixLink.link = node
+        self.nodeNeedSuffixLink = node
+
     def add_string(self, string):
         """
         Build suffix tree with Ukkonen's algoritm.
         """
         self.active_string += 1
-        self.strings[self.active_string] = string
+        self.strings.append(string + '$')
 
-        # Triplet for the active state
-        active_node   = self.root
-        active_edge   = '\00'
+        start = 0
+
+
+        ENDCHAR = len(self.get_string())# - 1
+        #print ENDCHAR
+        #for i in xrange(len(self.get_string())):
+        #    print i, self.get_char(i),
+        #print '\n'
+        #if self.active_string > 0 and False:
+        #    start = self._find_first_mistmatch(self.get_string())
+        #    if self.verbose: print "\tNew string starting on pos:", start,"which is char:", self.get_char(start)
+
+        #    # Entire string is encoded
+        #    if start <= 0:
+        #        if self.verbose: print string, "is allready encoded"
+        #        return
+
+        if self.verbose: print self
+
+        active_node = self.root
+        active_edge = '\00'
         active_length = 0
 
-        # How many new suffixes that need to be inserted.
-
-        remainder = 0
-
-        ENDCHAR = len(self.get_string())
+        self.remainder = 0
 
         # Iterate over all steps in input string.
         # From pos 0 to pos len(string) - 1
         # Step is position in string
         # todo this can be made to a addChar method? Step is obviously not needed
-        for step in xrange(len(self.get_string())):
+        for step in xrange(start, len(self.get_string())):
             c_char = self.get_char(step)
 
             # How many new suffixes that need to be inserted.
             # Set to one at the beginning of each step
-            remainder += 1
 
-            nodeNeedSuffixLink = None
+            self.remainder += 1
 
-            # Work through all remainders for each character
-            while remainder > 0:
+            self.nodeNeedSuffixLink = None
+
+            # Work through all self.remainders for each character
+            while self.remainder > 0:
                 # Make sure correct active edge is set
-                if active_length == 0: active_edge = step
+                if self.active_length == 0: self.active_edge = step
+
+                if self.verbose: print "\tStep {0}: New while. self.remainder is {1} active node is {2}".format(step, self.remainder,self.active_node)
 
                 # If current edge is not found current node
-                if self.get_char(active_edge) not in active_node.edges:
+                try:
+                    balle = self.get_char(self.active_edge)
+                except IndexError:
+                    print "IndexError aka fml"
+                    print self.active_string
+                    print self.active_edge
+                    print self.get_string(), len(self.get_string())
+                    print self
+
+                if self.get_char(self.active_edge) not in self.active_node.edges:
+                    if self.verbose: print "\tActive edge", self.get_char(self.active_edge), "not in active node"
                     # Insert the current char at current node
-                    active_node.setEdge(
-                            self.get_char(active_edge),
+                    newLeaf = self.active_node.setEdge(
+                            self.get_char(self.active_edge),
                             self.active_string,
                             step,
                             ENDCHAR)
+                    newLeaf.addSuffix(self.active_string, step - self.remainder - 1)
 
                     # rule 2
-                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
-                        nodeNeedSuffixLink.link = active_node
-                    nodeNeedSuffixLink = active_node
+                    self.set_suffix_link(self.active_node)
 
                 # There an outgoing edge from the current node
                 else:
-                    # The active node
-                    edge = active_node.edges[self.get_char(active_edge)]
+                    # Jump forward
+                    # TODO wierd bug, must be removed if string is stripped.
+                    if self.active_node.is_root():
+                        self.active_edge = step - self.remainder + 1 # testing
+                        self.active_length = self.remainder - 1 # testing
 
-                    # If at some point active_length is greater or equal to the
-                    # length of current edge (edge_length), we move our active
-                    # point down until edge_length is not strictly greater than
-                    # active_length.
-                    if active_length >= len(edge):
-                        active_edge += len(edge)
-                        active_length -= len(edge)
-                        active_node = edge
+                    # The active node
+                    edge = self.active_node.edges[self.get_char(self.active_edge)]
+
+                    if self.walk_down(edge):
                         continue
 
                     # the char is next in the existing edge
-                    if self.get_char(edge.start + active_length) == c_char: # observation 1
-                        active_length += 1
-                        # observation 3
-                        if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
-                            nodeNeedSuffixLink.link = active_node
-                        nodeNeedSuffixLink = active_node
-                        break # Time to go to next character
+                    # observation 1
+                    if self.get_char_from_string(edge.string_id, edge.start + self.active_length) == c_char:
+                        if self.verbose: print "\tObs 1:", c_char, "in edge"
 
-                    # Since the char was not the next, we will split
+                        if c_char == '$':
+                            # We ended on a suffix
+                            edge.addSuffix(self.active_string, step - self.remainder - 1)
+                        else:
+                            # We set this edge to be the active edge
+                            self.active_length += 1
+                            # observation 3
+                            self.set_suffix_link(self.active_node)
+                            break # Time to go to next character
+                    else:
+                        # Since the char was not the next, we will split
 
-                    # Overwrite old edge with new split
-                    splitEdge = active_node.setEdge(
-                            self.get_char(active_edge),
-                            self.active_string,
-                            edge.start,
-                            edge.start + active_length)
+                        # Overwrite old edge with new split
+                        # Once a leaf, always a leaf
+                        splitEdge = self.active_node.setEdge(
+                                self.get_char(self.active_edge),
+                                edge.string_id,
+                                edge.start,
+                                edge.start + self.active_length) #-1 testings
 
-                    # Insert the new char
-                    splitEdge.setEdge(
-                            c_char,
-                            self.active_string,
-                            step,
-                            ENDCHAR)
+                        # Insert the new char
+                        newLeaf = splitEdge.setEdge(
+                                c_char,
+                                self.active_string,
+                                step,
+                                ENDCHAR)
+                        newLeaf.addSuffix(self.active_string, step - self.remainder - 1)
 
-                    # Old edge start a bit further now
-                    edge.start += active_length
+                        # Old edge start a bit further now
+                        edge.start += self.active_length
+                        #edge.string_id = self.active_string
 
-                    # Insert the old edge to the new split edge
-                    splitEdge.edges[self.get_char(edge.start)] = edge
+                        # Insert the old edge to the new split edge
+                        splitEdge.edges[self.get_char_from_string(edge.string_id, edge.start)] = edge
 
-                    # rule 2
-                    if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
-                        nodeNeedSuffixLink.link = splitEdge
-                    nodeNeedSuffixLink = splitEdge
+                        # rule 2
+                        self.set_suffix_link(splitEdge)
 
                 # We have inserted one char
-                remainder -= 1
+                self.remainder -= 1
 
                 #  Rule 1
-                if active_node.is_root() and active_length > 0:
-                    active_length -= 1
-                    active_edge = step - remainder + 1
+                if self.active_node.is_root() and self.active_length > 0:
+                    self.active_length -= 1
+                    self.active_edge = step - self.remainder + 1
                 else:
                     #  Rule 3
-                    if active_node.link is not None and not active_node.link.is_root():
-                        active_node = active_node.link
+                    if self.active_node.link is not None:
+                        self.active_node = self.active_node.link
                     else:
-                        active_node = self.root
+                        self.active_node = self.root
 
     def get_internal_subtring(self, node, start, end):
         """
         Gets the internal substring from a node in a given range.
         """
         return self.strings[node.string_id][start:end]
+
+    def _find_first_mistmatch(self, substring):
+        """
+        Returns index of substring or -1 if not found.
+
+        Will changes the internal active point state.
+        """
+        if not substring:
+            return -1, None
+
+        self.active_node = self.root
+        i = 0
+        while i < len(substring):
+            if self.verbose: print "Current", i, self.active_node
+            self.active_length = i
+            self.active_edge = i
+
+            # Explicit mismatch
+            if substring[i] not in self.active_node.edges:
+                if self.verbose: print "Explicit mismatch"
+                return i + 1
+
+            node = self.active_node.edges[substring[self.active_edge]]
+
+            node_to = min(len(node), len(substring) - i)
+
+            s1 = substring[i:i+node_to]
+            s2 = self.get_internal_subtring(node, node.start, node.start+node_to)
+
+            # Implicit mismatch
+            if s1 != s2:
+                longest = _find_string_first_mismatch(s1, s2)
+                self.active_length += longest
+                return i + longest + 1
+
+            i += len(node)
+            self.active_node = node
+
+        # Entire string matches, return -1
+        return -1
 
     def find_substring(self, substring):
         """
@@ -206,7 +339,9 @@ class SuffixTree(object):
             edge = c_node.edges[substring[i]]
             edge_to = min(len(edge), len(substring) - i)
 
-            if substring[i:i+edge_to] != self.get_internal_subtring(edge, edge.start, edge.start+edge_to):
+            s1 = substring[i:i+edge_to]
+            s2 = self.get_internal_subtring(edge, edge.start, edge.start+edge_to)
+            if s1 != s2:
                 return -1
 
             i += len(edge)
@@ -254,6 +389,11 @@ class SuffixTree(object):
 
         return longest_match
 
+def _find_string_first_mismatch(s1, s2):
+    """
+    Returns position of first mismatch between s1 and s2.
+    """
+    return sum(c1!=c2 for c1,c2 in izip_longest(s1,s2))
 
 def cmd_line_main():
     import argparse
@@ -261,20 +401,37 @@ def cmd_line_main():
         description="Suffix Tree creator",
         epilog="Tips:\nabcabxabcd\ncdddcdc\nTGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG")
 
-    parser.add_argument("string", help="Make Suffix tree on this string")
-    parser.add_argument("search", help="Keyword to search for")
-    parser.add_argument("--gprint", help="Print graphviz file", action="store_true")
+    parser.add_argument("strings", nargs='+', help="Make Suffix tree on these strings")
+    parser.add_argument("-s", "--search", help="Keyword to search for")
+    parser.add_argument("-p", "--gprint", help="Print graphviz file", action="store_true")
+    parser.add_argument("-v", "--verbose", help="Verbose output", action="store_true")
+    parser.add_argument("-i", "--interactive", help="Start interactive", action="store_true")
     args = parser.parse_args()
 
-    st = SuffixTree()
-    st.add_string(args.string)
+    st = SuffixTree(verbose=args.verbose)
 
-    print st.find_substring(args.search)
+    for string in args.strings:
+        st.add_string(string)
+
+    if args.verbose: print "ST build complete."
+    if args.verbose: print st
+
+    if args.search:
+        if args.verbose: print "Search for", args.search, "found on pos:",
+        print st.find_substring(args.search)
 
     if args.gprint:
         from SuffixGrapher import Grapher
         g = Grapher(st)
         g.createGraphviz()
+
+    if args.interactive:
+        try:
+            from IPython import embed
+        except ImportError:
+            print "Install IPython.. doh.. nut"
+            exit(1)
+        embed()
 
 if __name__ == "__main__":
     cmd_line_main()
