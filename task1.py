@@ -1,4 +1,6 @@
 from algorithms.suffixtree.SuffixTree import SuffixTree
+from algorithms.suffixtree.SuffixGrapher import Grapher
+import matplotlib.pyplot as plt
 
 #Info for first task
 adaptersequence = "TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
@@ -30,6 +32,15 @@ for line in f:
         length_distribution[length_rest] += 1
     else:
         length_distribution[length_rest] = 1
+
+
+plt.bar(range(len(length_distribution)), length_distribution.values(), align='center')
+plt.xticks(range(len(length_distribution)), length_distribution.keys())
+plt.xlabel("Length")
+plt.ylabel("Count")
+
+plt.show()
+plt.savefig("task1.png")
 
     
 print "Number of matches: " + str(number_of_matches)
