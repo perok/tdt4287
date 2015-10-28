@@ -1,8 +1,6 @@
 from algorithms.suffixtree.SuffixTree import SuffixTree
-from algorithms.suffixtree.SuffixGrapher import Grapher
-import matplotlib.pyplot as plt
 
-#Info for first task
+#Info for second task
 adaptersequence = "TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
 filename = "s_3_sequence_1M.txt"
 number_of_matches = 0
@@ -21,38 +19,21 @@ for line in f:
     #Remove whitespaces and reverse line
     line = line.strip()
     reversed_line = line[::-1]
+    #Calculate number of mistakes allowed
+    error_limit = len(reversed_line)*0.1
     #Get longest suffix-prefix match for given string
-    longest_match = st.find_prefixmatch(reversed_line, st.root, 0)
+    longest_match = st.find_prefixmatch(reversed_line, st.root, error_limit)
     #Check number of matches
     length_match = len(longest_match)
     if length_match > 0:
         number_of_matches += 1
-    print longest_match
-    length_rest = len(reversed_line.replace(longest_match, '', 1))
+        print "Longest match found: " + longest_match[::-1]
+        length_rest = len(reversed_line.replace(longest_match, '', 1))
     if length_rest in length_distribution:
         length_distribution[length_rest] += 1
     else:
         length_distribution[length_rest] = 1
-
-
-plt.bar(range(len(length_distribution)), length_distribution.values(), align='center')
-plt.xticks(range(len(length_distribution)), length_distribution.keys())
-plt.xlabel("Length")
-plt.ylabel("Count")
-
-plt.savefig("task1.png")
-plt.show()
-
     
 print "Number of matches: " + str(number_of_matches)
 print "Length distribution: "
 print length_distribution
-
-'''
-
-length_distribution[1] = 1
-length_distribution[2] = 1
-if 1 in length_distribution:
-    length_distribution[1] += 1
-print length_distribution
-'''
