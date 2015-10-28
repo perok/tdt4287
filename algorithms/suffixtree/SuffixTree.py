@@ -36,25 +36,15 @@ class Node(object):
         """
         Get the lenght the substring for the edge to the node
         """
-<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
         return self.end - self.start
-=======
-        return self.end - self.start
->>>>>>> prefix-suffix match works
 
     def __repr__(self):
         s =  "N({0}, {1}, {2})\n".format(self.id, self.is_root(), self.link is not None)
         for key, value in self.edges.iteritems():
             s += "\t{0} -> Node(id={1}, start={2}, end={3}\n".format(
-<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
                     key,
                     value.string_id,
                     value.start,
-=======
-                    key,
-                    value.string_id,
-                    value.start,
->>>>>>> prefix-suffix match works
                     value.end)
         return s
 
@@ -92,11 +82,8 @@ class SuffixTree(object):
         active_edge   = '\00'
         active_length = 0
 
-<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
         # How many new suffixes that need to be inserted.
-=======
-        # How many new suffixes that need to be inserted.
->>>>>>> prefix-suffix match works
+
         remainder = 0
 
         ENDCHAR = len(self.get_string())
@@ -150,11 +137,6 @@ class SuffixTree(object):
 
                     # the char is next in the existing edge
                     if self.get_char(edge.start + active_length) == c_char: # observation 1
-<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
-                        # We set this edge to be the active edge
-=======
-                        # We set this edge to be the active edge
->>>>>>> prefix-suffix match works
                         active_length += 1
                         # observation 3
                         if nodeNeedSuffixLink is not None and not nodeNeedSuffixLink.is_root():
@@ -168,11 +150,7 @@ class SuffixTree(object):
                     splitEdge = active_node.setEdge(
                             self.get_char(active_edge),
                             self.active_string,
-<<<<<<< 1167314138d3f1d10d5f8b9658825c23e1dcea49
                             edge.start,
-=======
-                            edge.start,
->>>>>>> prefix-suffix match works
                             edge.start + active_length)
 
                     # Insert the new char
@@ -236,34 +214,6 @@ class SuffixTree(object):
 
         return edge.start - len(substring) + edge_to
 
-<<<<<<< 3ea9196b77b429b721149464483c298f6228717a
-    def find_prefix_match(self, string, error_limit):
-        """
-        Matches the prefix of the string with the suffixTree
-        """
-        largest_prefix_match = None
-        string_prefix = string
-        string_index = 0
-        suffix = False
-        current = self.root
-        while string_index < len(string_prefix):
-            if string_prefix[string_index] in current.edges:
-                current = current.edges[string_prefix[string_index]]
-                branch = self.get_internal_subtring(current, current.start, current.end)
-                string_end = string_index+len(branch)
-                if current.link is None:
-                    suffix = True
-                if len(string_prefix[string_index:string_end]) == len(branch) and self.hamming_distance(string_prefix[string_index:string_end], branch) <= error_limit:
-                    string_index += len(branch)
-                    if suffix:
-                        largest_prefix_match = string_prefix[:string_end]
-
-            else:
-                break
-        return largest_prefix_match
-
-=======
->>>>>>> fix recursive funtion for suffix-prefix match
     def hamming_distance(self, s1, s2):
         """
         Return the Hamming distance between equal-length sequences
@@ -303,8 +253,6 @@ class SuffixTree(object):
                         longest_match = match
 
         return longest_match
-
-
 
 
 def cmd_line_main():
