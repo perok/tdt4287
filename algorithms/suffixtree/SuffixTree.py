@@ -236,6 +236,7 @@ class SuffixTree(object):
 
         return edge.start - len(substring) + edge_to
 
+<<<<<<< 3ea9196b77b429b721149464483c298f6228717a
     def find_prefix_match(self, string, error_limit):
         """
         Matches the prefix of the string with the suffixTree
@@ -261,6 +262,8 @@ class SuffixTree(object):
                 break
         return largest_prefix_match
 
+=======
+>>>>>>> fix recursive funtion for suffix-prefix match
     def hamming_distance(self, s1, s2):
         """
         Return the Hamming distance between equal-length sequences
@@ -268,6 +271,39 @@ class SuffixTree(object):
         if len(s1) != len(s2):
             raise ValueError("Undefined for sequences of unequal length")
         return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
+
+    def find_prefixmatch(self, current_substring, node, error_limit, current_match = "", longest_match = ""):
+        string = current_substring
+        for edge in node.edges:
+            child_node = node.edges[edge]
+            edge_substring = self.get_internal_subtring(child_node, child_node.start, child_node.end)
+            #Logic if leaf node
+            if edge_substring[-1] == "$":
+                without_endchar = edge_substring[:-1]
+                string_substring = string[:len(without_endchar)]
+                if len(without_endchar) == len(string_substring):
+                    substring_error = self.hamming_distance(string_substring, without_endchar)
+                    match = current_match+string_substring
+                    if substring_error <= error_limit and len(match) > len(longest_match):
+                        longest_match = match
+
+            #Logic if an internal node
+            else:
+                string_substring = string[:len(edge_substring)]
+                substring_error = self.hamming_distance(string_substring, edge_substring)
+
+                if substring_error > error_limit:
+                    continue
+                else:
+                    new_error_limit = error_limit-substring_error
+                    new_current_match = current_match + string_substring
+                    new_current_substring = string[len(edge_substring):]
+                    match = self.find_prefixmatch(new_current_substring, child_node, new_error_limit, new_current_match, longest_match)
+                    if len(match) > len(longest_match):
+                        longest_match = match
+
+        return longest_match
+
 
 
 
@@ -282,11 +318,22 @@ def cmd_line_main():
     parser.add_argument("--gprint", help="Print graphviz file", action="store_true")
     args = parser.parse_args()
 
+
     st = SuffixTree()
     st.add_string(args.string)
     print st.find_substring(args.search)
-
     print st.find_prefix_match(args.search, 0)
+    
+    adaptersequence = "$TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
+    reversed_adaptersequence = adaptersequence[::-1]
+    st.add_string(reversed_adaptersequence)
+    f = open("s_3_sequence_1M.txt", "r")
+    for line in f:
+        line = line.strip()
+        reversed_line = line[::-1]
+        matchmatch = st.find_prefixmatch(reversed_line, st.root, 0)
+        if len(matchmatch) > 1:
+            print "Longest match found: " + matchmatch[::-1]
 
 
     if args.gprint:
