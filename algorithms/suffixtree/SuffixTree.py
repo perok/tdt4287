@@ -131,15 +131,14 @@ class SuffixTree(object):
             self.nodeNeedSuffixLink.link = node
         self.nodeNeedSuffixLink = node
 
-    def add_string(self, string):
+    def add_string(self, string, prefix_char='', suffix_char='$'):
         """
         Build suffix tree with Ukkonen's algoritm.
         """
         self.active_string += 1
-        self.strings.append(string + '$')
+        self.strings.append("{0}{1}{2}".format(prefix_char, string, suffix_char))
 
         start = 0
-
 
         ENDCHAR = len(self.get_string())# - 1
         #print ENDCHAR
