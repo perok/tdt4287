@@ -388,6 +388,36 @@ class SuffixTree(object):
 
         return longest_match
 
+    def find_prefixmatch_nr(self, string, start_node, error_limit):
+        dfs_queue = [(start_node, 0)]
+        longest_match = ""
+        while dfs_queue:
+            node, length = dfs_queue.pop()
+            substring = string[length:]
+            for edge in node.edges:
+                child_node = node.edges[edge]
+                edge_substring = self.get_internal_subtring(child_node, child_node.start, child_node.end)
+                #Logic if leaf node
+                if edge_substring[-1] == "$":
+                    without_endchar = edge_substring[:-1]
+                    total_length = length + len(without_endchar)
+                    string_substring = string[length:total_length]
+                    if len(without_endchar) == len(string_substring):
+                        substring_error = self.hamming_distance(string_substring, without_endchar)
+                        match = string[:total_length]
+                        if substring_error/float(len(string)) <= error_limit and len(match) > len(longest_match):
+                            longest_match = match
+
+                #Logic if an internal node
+                else:
+                    total_length = length + len(edge_substring)
+                    string_substring = string[length:total_length]
+                    substring_error = self.hamming_distance(string_substring, edge_substring)
+                    if substring_error/float(len(string)) <= error_limit:
+                        dfs_queue.append((child_node, total_length))
+
+        return longest_match
+
 def _find_string_first_mismatch(s1, s2):
     """
     Returns position of first mismatch between s1 and s2.

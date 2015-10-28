@@ -1,6 +1,5 @@
 from algorithms.suffixtree.SuffixTree import SuffixTree
 from algorithms.suffixtree.SuffixGrapher import Grapher
-import matplotlib.pyplot as plt
 
 #Info for first task
 adaptersequence = "TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
@@ -22,12 +21,14 @@ for line in f:
     line = line.strip()
     reversed_line = line[::-1]
     #Get longest suffix-prefix match for given string
-    longest_match = st.find_prefixmatch(reversed_line, st.root, 0)
+    longest_match = st.find_prefixmatch_nr(reversed_line, st.root, 0.0)
     #Check number of matches
     length_match = len(longest_match)
     if length_match > 0:
         number_of_matches += 1
-    print longest_match
+        if number_of_matches % 10000 == 0:
+            print number_of_matches
+    #Fix distribution
     length_rest = len(reversed_line.replace(longest_match, '', 1))
     if length_rest in length_distribution:
         length_distribution[length_rest] += 1
@@ -35,16 +36,8 @@ for line in f:
         length_distribution[length_rest] = 1
 
 
-plt.bar(range(len(length_distribution)), length_distribution.values(), align='center')
-plt.xticks(range(len(length_distribution)), length_distribution.keys())
-plt.xlabel("Length")
-plt.ylabel("Count")
-
-plt.savefig("task1.png")
-plt.show()
-
     
-print "Number of matches: " + str(number_of_matches)
+print "Number of exact matches: " + str(number_of_matches)
 print "Length distribution: "
 print length_distribution
 
