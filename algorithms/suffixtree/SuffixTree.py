@@ -15,8 +15,8 @@ class Node(object):
 
     """
     # Avoid using dict on class properties
-    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']
-        #'suffixes_visited_by']
+    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']#,
+    #    'suffixes_visited_by']
 
     counter = 0
 
@@ -32,7 +32,7 @@ class Node(object):
 
         # from array import array with array('i') ?
         self.suffixes = 0
-        #self.suffixes_visited_by = bitarray()
+        #self.suffixes_visited_by = set() #bitarray()
 
     def setEdge(self, char, string_id, start, end):
         """
@@ -49,11 +49,11 @@ class Node(object):
         #self.suffixes_visited_by.add(string_id)
         # append((string_id, char))
 
-        # if len(self.suffixes_visited_by) < string_id + 1:
-        #     toAppend = string_id - len(self.suffixes_visited_by) + 1
-        #     self.suffixes_visited_by.extend([False] * toAppend)
-        # self.suffixes_visited_by[string_id] = True
-        # print len(self.suffixes_visited_by)
+        #if len(self.suffixes_visited_by) < string_id + 1:
+        #    toAppend = string_id - len(self.suffixes_visited_by) + 1
+        #    self.suffixes_visited_by.extend([False] * toAppend)
+        #self.suffixes_visited_by[string_id] = True
+        #print len(self.suffixes_visited_by)
 
     def is_root(self):
         return self.start is None
@@ -371,6 +371,9 @@ class SuffixTree(object):
         return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
     def find_prefixmatch(self, current_substring, node, error_limit, current_match = "", longest_match = ""):
+        """
+        Find perfect prefix matches
+        """
         string = current_substring
         for edge in node.edges:
             child_node = node.edges[edge]
@@ -403,6 +406,10 @@ class SuffixTree(object):
         return longest_match
 
     def find_prefixmatch_nr(self, string, start_node, error_limit):
+        """
+        Find prefix matches with a given error limit [0, 1]%.
+        TODO Handle General Suffix Trees
+        """
         dfs_queue = [(start_node, 0)]
         longest_match = ""
         while dfs_queue:

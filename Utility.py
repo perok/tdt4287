@@ -67,22 +67,22 @@ def count_and_show_suffixes(suffix_tree):
         cNode, label = queue.get()
 
         if len(cNode.edges) == 0:
-            if len(label) < 8 or cNode.suffixes < 1000 or label == '$':
+            if len(label) < 20 or cNode.suffixes < 1000 or label == '$':
                 continue
 
             suffixes[label] = cNode.suffixes
 
         for key, nNode in cNode.edges.iteritems():
-            print nNode.suffixes_visited_by
+            #print nNode.suffixes_visited_by
             newLabel = str(label) + suffix_tree.get_internal_subtring(nNode, nNode.start, nNode.end)
             queue.put((nNode, newLabel))
 
 
     # Sort them suffixes
-    sortedSuffixes = sorted(suffixes.items(), key=lambda x: x[1])
+    sortedSuffixes = sorted(suffixes.items(), key=lambda x: int(x[1]))
 
-    for (key, value) in sortedSuffixes:
-        print "{0}: {1}".format(value, key.strip())
+    for (label, value) in sortedSuffixes:
+        print "{0}: {1}".format(value, label.replace('\n', ''))
 
 def create_graph_from_length_distribution(length_distribution, name=False):
     import matplotlib.pyplot as plt
@@ -111,7 +111,7 @@ def length_distribution_on_suffix(filename, adaptersequence):
     for line in generate_strings(filename):
         reversed_line = line[::-1]
         #Get longest suffix-prefix match for given string
-        longest_match = st.find_prefixmatch(reversed_line, st.root, 0)
+        longest_match = st.find_prefixmatch_nr(reversed_line, st.root, 0.0)
         #Check number of matches
         length_match = len(longest_match)
         if length_match > 0:

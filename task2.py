@@ -10,7 +10,7 @@ def hamming_distance(s1, s2):
 
 #Info for second task
 adaptersequence = "TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
-filename = "s_3_sequence_1M.txt"
+filename = "dataset/S_3_sequence_1M.txt"
 number_of_matches = 0
 length_distribution = {}
 
@@ -41,7 +41,7 @@ for line in f:
 
 
 
-    
+
 print "Number of matches: " + str(number_of_matches)
 print "Length distribution"
 print length_distribution

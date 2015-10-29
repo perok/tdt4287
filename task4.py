@@ -38,9 +38,8 @@ with open("dataset/task4_fake.txt") as text_file:
 
         found = False
 
-        if len(label) < 15:
-            continue
-
+        #if len(label) < 15:
+        #    continue
 
         for eLabel, eCount in longest.iteritems():
             print label, "AGAINST", eLabel
@@ -52,20 +51,20 @@ with open("dataset/task4_fake.txt") as text_file:
                 if eLabel in label:
                     print label, "better than", eLabel
                     found = True
-                    c = eCount if eCount > count else count
+                    #c = eCount if eCount > count else count
                     del longest[eLabel]
-                    longest[label] = c
+                    longest[label] = count
             else:
                 if label in eLabel:
                     print eLabel, "better than", label
                     found = True
-                    c = eCount if eCount > count else count
-                    longest[eLabel] = c
+                    #c = eCount if eCount > count else count
+                    longest[eLabel] = eCount
 
         if not found:
             longest[label] = count
 
-sortedSuffixes = sorted(longest.items(), key=lambda x: x[1])
+sortedSuffixes = sorted(longest.items(), key=lambda x: int(x[1]))
 
 for (key, value) in sortedSuffixes:
     print "{0}: {1}".format(value, key)
@@ -75,6 +74,48 @@ print "LENGTH SORT"
 for (key, value) in sortedSuffixes:
     print "{0}:\t{1}".format(value, key)
 print "{0} / {1}".format(len(longest), total)
+
+
+
+# Hamming matchmaking! The new match.com
+
+# (label, count, (match labels))
+from Levenshtein import distance
+matchResults = []
+from itertools import izip_longest
+longlength = 0
+for label, count in sortedSuffixes:
+    matches = set()
+
+    if longlength < len(label):
+        longlength = len(label)
+
+    for mLabel, mCount in sortedSuffixes:
+        if label == mLabel:
+            continue
+
+        err = 0
+        if len(label) > len(mLabel):
+            #err = sum(c1!=c2 for c1,c2 in izip_longest(label[len(label) - len(mLabel) - 1:], mLabel))
+            err = distance(label[len(label) - len(mLabel) - 1:], mLabel)
+
+        elif len(label) < len(eLabel):
+            err = distance(eLabel[len(mLabel) - len(label) - 1:], label)
+        else:
+            err = distance(eLabel, label)
+
+        if err <3:
+            matches.add(mLabel)
+    matchResults.append((label, count, matches))
+
+print "Match.com:"
+for (label, count, matches) in matchResults:
+    print "{1}:\t{2}\t{3}{0}".format(label, count, len(matches), ' ' * (longlength - len(label)))
+
+
+
+
+
 
 
 # SECOND PASS
@@ -100,7 +141,7 @@ for (label, count) in sortedSuffixes:
             print "Check", label[len(label) - len(eLabel) - 1:], eLabel
             err = sum(c1!=c2 for c1,c2 in izip_longest(label[len(label) - len(eLabel) - 1:], eLabel))
             print err
-            if err < 3:
+            if err <3:
                 found = True
                 c = eCount if eCount > count else count
                 del best[eLabel]
@@ -108,7 +149,7 @@ for (label, count) in sortedSuffixes:
         elif len(label) < len(eLabel):
             err = sum(c1!=c2 for c1,c2 in izip_longest(eLabel[len(eLabel) - len(label) - 1:], label))
             print err
-            if err < 3:
+            if err <3:
                 found = True
                 c = eCount if eCount > count else count
                 best[eLabel] = c

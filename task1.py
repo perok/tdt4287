@@ -3,7 +3,7 @@ from algorithms.suffixtree.SuffixGrapher import Grapher
 
 #Info for first task
 adaptersequence = "TGGAATTCTCGGGTGCCAAGGAACTCCAGTCACACAGTGATCTCGTATGCCGTCTTCTGCTTG"
-filename = "s_3_sequence_1M.txt"
+filename = "dataset/S_3_sequence_1M.txt"
 number_of_matches = 0
 length_distribution = {}
 
@@ -36,7 +36,7 @@ for line in f:
         length_distribution[length_rest] = 1
 
 
-    
+
 print "Number of exact matches: " + str(number_of_matches)
 print "Length distribution: "
 print length_distribution
