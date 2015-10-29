@@ -82,9 +82,10 @@ def count_and_show_suffixes(suffix_tree):
     sortedSuffixes = sorted(suffixes.items(), key=lambda x: int(x[1]))
 
     for (label, value) in sortedSuffixes:
-        print "{0}: {1}".format(value, label.replace('\n', ''))
+        l = label.replace('\n', '')
+        print "{0}:\t{2}\t{1}".format(value, l, len(l))
 
-def create_graph_from_length_distribution(length_distribution, name=False):
+def plot_graph_from_length_distribution(length_distribution, name=False):
     import matplotlib.pyplot as plt
 
     plt.bar(range(len(length_distribution)), length_distribution.values(), align='center')
@@ -96,6 +97,15 @@ def create_graph_from_length_distribution(length_distribution, name=False):
 
     if name:
         plt.savefig(name)
+
+def csv_distribution(distribution, name="distribution.csv"):
+    import csv
+
+    with open(name, 'wb') as d_file:
+        wr = csv.writer(d_file, delimiter=',', quoting=csv.QUOTE_ALL)
+        wr.writerow(['length', 'count'])
+        for length, count in distribution.iteritems():
+            wr.writerow([length, count])
 
 
 def length_distribution_on_suffix(filename, adaptersequence):
@@ -122,4 +132,4 @@ def length_distribution_on_suffix(filename, adaptersequence):
         else:
             length_distribution[length_rest] = 1
 
-    return length_distribution
+    return number_of_matches, length_distribution
