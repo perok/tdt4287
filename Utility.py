@@ -126,7 +126,7 @@ def length_distribution_on_suffix(filename, adaptersequence):
         length_match = len(longest_match)
         if length_match > 0:
             number_of_matches += 1
-        length_rest = len(reversed_line.replace(longest_match, '', 1))
+        length_rest = len(line) - length_match
         if length_rest in length_distribution:
             length_distribution[length_rest] += 1
         else:
