@@ -399,14 +399,15 @@ class SuffixTree(object):
                 edge_substring = self.get_internal_subtring(child_node, child_node.start, child_node.end)
                 #Logic if leaf node
                 if edge_substring[-1] == "$":
-                    without_endchar = edge_substring[:-1]
-                    total_length = length + len(without_endchar)
-                    string_substring = string[length:total_length]
-                    if len(without_endchar) == len(string_substring):
-                        substring_error = self.hamming_distance(string_substring, without_endchar)
-                        match = string[:total_length]
-                        if substring_error/float(len(string)) <= error_limit and len(match) > len(longest_match):
-                            longest_match = match
+                    without_endchar = self.get_string()[:-1]
+                    total_length = length + len(edge_substring)-1
+                    possible_match = string[:total_length]
+                    suffix_index = len(without_endchar) - total_length
+                    suffix = without_endchar[suffix_index:]
+                    if len(suffix) == len(possible_match) and len(possible_match) > 0:
+                        substring_error = self.hamming_distance(possible_match, suffix)
+                        if substring_error/float(len(suffix)) <= error_limit and len(possible_match) > len(longest_match):
+                            longest_match = possible_match
 
                 #Logic if an internal node
                 else:

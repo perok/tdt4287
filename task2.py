@@ -28,7 +28,7 @@ for line in f:
     line = line.strip()
     reversed_line = line[::-1]
     #Get longest suffix-prefix match for given string
-    longest_match = st.find_prefixmatch_nr(reversed_line, st.root, 0.1)
+    longest_match = st.find_prefixmatch_nr(reversed_line, st.root, 0.25)
     #Check number of matches
     length_match = len(longest_match)
     if length_match > 0:
