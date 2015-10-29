@@ -1,5 +1,8 @@
-from itertools import izip_longest
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+from itertools import izip_longest
+#from bitarray import bitarray
 alphabet = 'ACTG$'
 
 class Node(object):
@@ -12,7 +15,8 @@ class Node(object):
 
     """
     # Avoid using dict on class properties
-    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']
+    __slots__ = ['id', 'start', 'end', 'string_id', 'edges', 'link', 'suffixes']#,
+    #    'suffixes_visited_by']
 
     counter = 0
 
@@ -26,7 +30,9 @@ class Node(object):
         self.edges = {} # recordclass with alphabet?
         self.link = None
 
+        # from array import array with array('i') ?
         self.suffixes = 0
+        #self.suffixes_visited_by = set() #bitarray()
 
     def setEdge(self, char, string_id, start, end):
         """
@@ -40,7 +46,14 @@ class Node(object):
 
     def addSuffix(self, string_id, char):
         self.suffixes += 1
+        #self.suffixes_visited_by.add(string_id)
         # append((string_id, char))
+
+        #if len(self.suffixes_visited_by) < string_id + 1:
+        #    toAppend = string_id - len(self.suffixes_visited_by) + 1
+        #    self.suffixes_visited_by.extend([False] * toAppend)
+        #self.suffixes_visited_by[string_id] = True
+        #print len(self.suffixes_visited_by)
 
     def is_root(self):
         return self.start is None
@@ -65,6 +78,10 @@ class SuffixTree(object):
     """
     Generalized Suffix Tree
     """
+
+    __slots__ = ['active_string', 'strings', 'root', 'active_node',
+        'active_edge', 'active_length', 'remainder', 'nodeNeedSuffixLink',
+        'verbose']
 
     def __init__(self, verbose=False):
         self.active_string = -1
@@ -141,11 +158,8 @@ class SuffixTree(object):
         start = 0
 
         ENDCHAR = len(self.get_string())# - 1
-        #print ENDCHAR
-        #for i in xrange(len(self.get_string())):
-        #    print i, self.get_char(i),
-        #print '\n'
-        #if self.active_string > 0 and False:
+
+        #if self.active_string > 0:# and False:
         #    start = self._find_first_mistmatch(self.get_string())
         #    if self.verbose: print "\tNew string starting on pos:", start,"which is char:", self.get_char(start)
 
@@ -156,9 +170,9 @@ class SuffixTree(object):
 
         if self.verbose: print self
 
-        active_node = self.root
-        active_edge = '\00'
-        active_length = 0
+        self.active_node = self.root
+        self.active_edge = '\00'
+        self.active_length = 0
 
         self.remainder = 0
 
@@ -184,14 +198,14 @@ class SuffixTree(object):
                 if self.verbose: print "\tStep {0}: New while. self.remainder is {1} active node is {2}".format(step, self.remainder,self.active_node)
 
                 # If current edge is not found current node
-                try:
-                    balle = self.get_char(self.active_edge)
-                except IndexError:
-                    print "IndexError aka fml"
-                    print self.active_string
-                    print self.active_edge
-                    print self.get_string(), len(self.get_string())
-                    print self
+                # try:
+                #     balle = self.get_char(self.active_edge)
+                # except IndexError:
+                #     print "IndexError aka fml"
+                #     print self.active_string
+                #     print self.active_edge
+                #     print self.get_string(), len(self.get_string())
+                #     print self
 
                 if self.get_char(self.active_edge) not in self.active_node.edges:
                     if self.verbose: print "\tActive edge", self.get_char(self.active_edge), "not in active node"
@@ -357,6 +371,9 @@ class SuffixTree(object):
         return sum(ch1 != ch2 for ch1, ch2 in zip(s1, s2))
 
     def find_prefixmatch(self, current_substring, node, error_limit, current_match = "", longest_match = ""):
+        """
+        Find perfect prefix matches
+        """
         string = current_substring
         for edge in node.edges:
             child_node = node.edges[edge]
@@ -389,6 +406,10 @@ class SuffixTree(object):
         return longest_match
 
     def find_prefixmatch_nr(self, string, start_node, error_limit):
+        """
+        Find prefix matches with a given error limit [0, 1]%.
+        TODO Handle General Suffix Trees
+        """
         dfs_queue = [(start_node, 0)]
         longest_match = ""
         while dfs_queue:
@@ -418,6 +439,7 @@ class SuffixTree(object):
                         dfs_queue.append((child_node, total_length))
 
         return longest_match
+
 
 def _find_string_first_mismatch(s1, s2):
     """
